@@ -1,5 +1,7 @@
 using Blazored.Toast;
+using Microsoft.AspNetCore.Components.Authorization;
 using WebAppRestaurante.Web;
+using WebAppRestaurante.Web.Authentication;
 using WebAppRestaurante.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,11 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddOutputCache();
+
+// Se agregar el CustomAuthStateProvider
+builder.Services.AddAuthentication();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider , CustomAuthStateProvider>();
 
 builder.Services.AddHttpClient<ApiClient>(client =>
     {
@@ -35,6 +42,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseOutputCache();
 

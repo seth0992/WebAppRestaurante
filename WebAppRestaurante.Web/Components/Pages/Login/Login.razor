@@ -1,9 +1,12 @@
 ﻿@page "/login"
+@using Microsoft.AspNetCore.Components.Authorization
 @using WebAppRestaurante.Models.Models
+@using WebAppRestaurante.Web.Authentication
 @using WebAppRestaurante.Web.Components.Layout
 @layout EmptyLayout
 @inject ApiClient apiClient
 @inject NavigationManager navigationManager
+@inject AuthenticationStateProvider authStateProvider
 
 <EditForm Model="loginModel" FormName="Login" OnValidSubmit="HandleLogin">
 
@@ -24,10 +27,11 @@
     public LoginModel loginModel { get; set; } = new LoginModel();
 
     private async Task HandleLogin() {
-        var res = await apiClient.PostAsync<LoginResponseModel, LoginModel>("api/auth/login", loginModel);
+        var res = await apiClient.PostAsync<LoginResponseModel, LoginModel>("api/Auth/login", loginModel);
 
         if (res != null && res.Token != null) {
             //Use CustomAuthStateProvider.
+            await ((CustomAuthStateProvider)authStateProvider).MarkUserAsAuthenticated(res.Token);
             navigationManager.NavigateTo("/");
         }
 
