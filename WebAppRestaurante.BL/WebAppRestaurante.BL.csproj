@@ -7,11 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Repositories\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\WebAppRestaurante.Database\WebAppRestaurante.Database.csproj" />
     <ProjectReference Include="..\WebAppRestaurante.Models\WebAppRestaurante.Models.csproj" />
   </ItemGroup>

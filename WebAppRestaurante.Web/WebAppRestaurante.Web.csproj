@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Blazored.Toast" Version="4.2.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WebAppRestaurante.Models\WebAppRestaurante.Models.csproj" />
     <ProjectReference Include="..\WebAppRestaurante.ServiceDefaults\WebAppRestaurante.ServiceDefaults.csproj" />
   </ItemGroup>
 
