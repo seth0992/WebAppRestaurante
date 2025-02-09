@@ -14,7 +14,7 @@ namespace WebAppRestaurante.BL.Repositories
     {
         Task<List<ProductModel>> GetAllProductsAsync();
         Task<ProductModel> CreateProductAsync(ProductModel productModel);
-        Task<ProductModel> GetProductsAsync(int id);
+        Task<ProductModel?> GetProductsAsync(int id);
         Task<bool> ProductModelExists(int id);
         Task UpdateProduct(ProductModel productModel);
         Task DeleteProductAsync(int id);
@@ -32,8 +32,11 @@ namespace WebAppRestaurante.BL.Repositories
         public async Task DeleteProductAsync(int id)
         {
             var product = await appDbContext.Products.FirstOrDefaultAsync(p => p.ID == id);
-            appDbContext.Products.Remove(product);
-            await appDbContext.SaveChangesAsync();
+            if (product != null)
+            {
+                appDbContext.Products.Remove(product);
+                await appDbContext.SaveChangesAsync();
+            }
         }
 
         public async Task<List<ProductModel>> GetAllProductsAsync()
@@ -41,7 +44,7 @@ namespace WebAppRestaurante.BL.Repositories
             return await appDbContext.Products.ToListAsync();
         }
 
-        public Task<ProductModel> GetProductsAsync(int id)
+        public Task<ProductModel?> GetProductsAsync(int id)
         {
             return appDbContext.Products.FirstOrDefaultAsync(p => p.ID == id);
         }

@@ -1,0 +1,35 @@
+﻿@page "/login"
+@using WebAppRestaurante.Models.Models
+@using WebAppRestaurante.Web.Components.Layout
+@layout EmptyLayout
+@inject ApiClient apiClient
+@inject NavigationManager navigationManager
+
+<EditForm Model="loginModel" FormName="Login" OnValidSubmit="HandleLogin">
+
+    <DataAnnotationsValidator/>
+    <div class="form-group">
+        <label for="username">Username</label>
+        <InputText id="username" class="form-control" @bind-value="loginModel.Username" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password</label>
+        <InputText id="password" class="form-control" typeof="password" @bind-value="loginModel.Password" />
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Login</button> 
+</EditForm>
+
+@code {
+    public LoginModel loginModel { get; set; } = new LoginModel();
+
+    private async Task HandleLogin() {
+        var res = await apiClient.PostAsync<LoginResponseModel, LoginModel>("api/auth/login", loginModel);
+
+        if (res != null && res.Token != null) {
+            //Use CustomAuthStateProvider.
+            navigationManager.NavigateTo("/");
+        }
+
+    }
+}

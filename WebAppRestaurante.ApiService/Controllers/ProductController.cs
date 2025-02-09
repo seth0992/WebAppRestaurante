@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebAppRestaurante.BL.Services;
 using WebAppRestaurante.Models.Entities.Products;
 using WebAppRestaurante.Models.Models;
@@ -7,6 +8,7 @@ namespace WebAppRestaurante.ApiService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ProductController(IProductService productService) : ControllerBase
     {
         [HttpGet]

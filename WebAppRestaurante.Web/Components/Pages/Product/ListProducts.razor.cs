@@ -15,7 +15,8 @@ namespace WebAppRestaurante.Web.Components.Pages.Product
         [Inject]
         public required IToastService toastService { get; set; }
         public List<ProductModel> ProductoModels { get; set; } = new();
-        public AppModal Modal { get; set; }
+        
+        public required AppModal Modal { get; set; }
         public int DeleteID { get; set; }
 
         protected override async Task OnInitializedAsync()
