@@ -2,20 +2,24 @@
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using WebAppRestaurante.Models.Models;
 
 namespace WebAppRestaurante.Web.Authentication
 {
     public class CustomAuthStateProvider(ProtectedLocalStorage localStorage) : AuthenticationStateProvider
     {
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            throw new NotImplementedException();
+            var sessionModel = (await localStorage.GetAsync<LoginResponseModel>("sessionState")).Value;
+            var identity = sessionModel == null ? new ClaimsIdentity() : GetClaimsIdentity(sessionModel.Token);
+            var user = new ClaimsPrincipal(identity);
+                return new AuthenticationState(user);
         }
 
-        public async Task MarkUserAsAuthenticated(string token) {
+        public async Task MarkUserAsAuthenticated(LoginResponseModel model) {
 
-            await localStorage.SetAsync("authToken", token);
-            var identity = GetClaimsIdentity(token);
+            await localStorage.SetAsync("sessionState", model);
+            var identity = GetClaimsIdentity(model.Token);
             var user = new ClaimsPrincipal(identity);
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
             
@@ -27,6 +31,13 @@ namespace WebAppRestaurante.Web.Authentication
             var jwtToken = handler.ReadJwtToken(token);
             var claims = jwtToken.Claims;
             return new ClaimsIdentity(claims, "jwt");
+        }
+
+        public async Task MarkUserAsLoggedOut() {
+            await localStorage.DeleteAsync("sessionState");
+            var identity = new ClaimsIdentity();
+            var user = new ClaimsPrincipal(identity);
+            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
         }
     }
 }

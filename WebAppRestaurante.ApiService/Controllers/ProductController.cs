@@ -6,6 +6,7 @@ using WebAppRestaurante.Models.Models;
 
 namespace WebAppRestaurante.ApiService.Controllers
 {
+    [Authorize(Roles = "Admin , User")]
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]

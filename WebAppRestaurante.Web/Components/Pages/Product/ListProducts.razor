@@ -1,5 +1,7 @@
 ﻿@page "/product"
-
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize(Roles = "Admin,User")]
 
 <h3>ListProducts</h3>
 
@@ -8,7 +10,8 @@
 
     <p>Loading</p>
 }
-else {
+else
+{
     <a class="btn btn-primary" href="/product/create">Create</a>
     <table class="table">
         <thead>
@@ -34,24 +37,28 @@ else {
                     <td>@product.CreateAt.ToShortDateString()</td>
                     <td>
                         <a class="btn btn-secondary" href="/product/update/@product.ID">Update</a>
-                        <button class="btn btn-danger" @onclick="() => {DeleteID = product.ID; Modal.Open();}">Delete</button>
-                      @*   <button class="btn btn-primary" @onclick="() => EditProduct(producto.Id)">Editar</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteProduct(producto.Id)">Eliminar</button> *@
+                        <AuthorizeView Roles="Admin">
+                            <Authorized>
+                                <button class="btn btn-danger" @onclick="() => {DeleteID = product.ID; Modal.Open();}">Delete</button>
+                            </Authorized>
+
+                        </AuthorizeView>
+
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 
-    <AppModal @ref="Modal"> 
+    <AppModal @ref="Modal">
         <Title>Notification</Title>
         <Body>
             Do you sure want to delete this product?
         </Body>
         <Footer>
             <button type="button" class="btn btn-primary" style="width:80px" @onclick="HandleDelete">Yes</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal"  @onclick="() => Modal.Close()">Cancel</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => Modal.Close()">Cancel</button>
         </Footer>
     </AppModal>
-    
+
 }

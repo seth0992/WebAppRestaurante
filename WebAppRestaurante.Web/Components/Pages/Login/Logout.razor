@@ -1,0 +1,13 @@
+﻿@page "/logout"
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using WebAppRestaurante.Web.Authentication
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navigationManager
+
+@code {
+    protected override async Task OnInitializedAsync() {
+        await ((CustomAuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+        navigationManager.NavigateTo("/login");
+    }
+}
