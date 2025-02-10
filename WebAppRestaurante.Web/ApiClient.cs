@@ -87,6 +87,7 @@ public class ApiClient(HttpClient httpClient,
         
     public async Task<T1?> PostAsync<T1, T2>(string path, T2 postModel)
     {
+        await SetAuthorizationHeader();
         try
         {
             var response = await httpClient.PostAsJsonAsync(path, postModel);

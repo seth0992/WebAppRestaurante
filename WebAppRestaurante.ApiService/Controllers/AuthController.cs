@@ -4,30 +4,43 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using WebAppRestaurante.BL.Services;
+using WebAppRestaurante.Models.Entities.Users;
 using WebAppRestaurante.Models.Models;
 
 namespace WebAppRestaurante.ApiService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController: ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(IConfiguration configuration, IAuthService authService)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         }
 
         [HttpPost("login")]
-        public ActionResult<LoginResponseModel> Login([FromBody] LoginModel loginModel)
+        public async Task<ActionResult<LoginResponseModel>> Login([FromBody] LoginModel loginModel)
         {
-            if (loginModel.Username == "Admin" && loginModel.Password == "Admin" ||
-               loginModel.Username == "User" && loginModel.Password == "User")
+            var user = await _authService.GetUserByLogin(loginModel.Username, loginModel.Password);
+
+            if (user != null)
             {
-                var token = GenerateJwtToken(loginModel.Username , isRefreshToken:false);
-                var resfreshToken = GenerateJwtToken(loginModel.Username, isRefreshToken: true);
-                return Ok(new LoginResponseModel { 
+                var token = GenerateJwtToken(user, isRefreshToken: false);
+                var resfreshToken = GenerateJwtToken(user, isRefreshToken: true);
+
+                await _authService.AddRefreshTokenModel(new RefreshTokenModel
+                {
+                    RefreshToken = resfreshToken,
+                    UserID = user.ID
+                });
+
+                return Ok(new LoginResponseModel
+                {
                     Token = token,
                     RefreshToken = resfreshToken,
                     TokenExpired = DateTimeOffset.UtcNow.AddMinutes(9).ToUnixTimeSeconds()
@@ -36,14 +49,14 @@ namespace WebAppRestaurante.ApiService.Controllers
             return Unauthorized();
         }
 
-        private string GenerateJwtToken(string username, bool isRefreshToken)
+        private string GenerateJwtToken(UserModel user, bool isRefreshToken)
         {
-            var claims = new[] {
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role,  username == "Admin" ? "Admin" : "User")
+            var claims = new List<Claim>() {
+                new Claim(ClaimTypes.Name, user.Username),
               };
+            claims.AddRange(user.UserRoles.Select(n => new Claim(ClaimTypes.Role, n.Role.RoleName)));
 
-            string secret = _configuration.GetValue<string>($"Jwt:{((isRefreshToken)? "RefreshTokenSecret" : "Secret")}") ?? throw new InvalidOperationException("JWT secret is not configured.");
+            string secret = _configuration.GetValue<string>($"Jwt:{((isRefreshToken) ? "RefreshTokenSecret" : "Secret")}") ?? throw new InvalidOperationException("JWT secret is not configured.");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -51,7 +64,7 @@ namespace WebAppRestaurante.ApiService.Controllers
                 issuer: "doseHiue",
                 audience: "doseHiue",
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(isRefreshToken ? 24*60 :  9),
+                expires: DateTime.UtcNow.AddMinutes(isRefreshToken ? 24 * 60 : 9),
                 signingCredentials: creds
                 );
 
@@ -60,18 +73,25 @@ namespace WebAppRestaurante.ApiService.Controllers
         }
 
         [HttpGet("loginByRefreshToken")]
-        public ActionResult<LoginResponseModel> LoginByRefreshToken(string refreshToken) {
-            var secret = _configuration.GetValue<string>("Jwt:RefreshTokenSecret");
-            var claimsPrincipal = GetClaimsPrincipalFromToken(refreshToken, secret);
-            if (claimsPrincipal == null) {
-                return new StatusCodeResult(StatusCodes.Status401Unauthorized);
+        public async Task<ActionResult<LoginResponseModel>> LoginByRefreshToken(string refreshToken)
+        {
+
+            var refreshTokenModel = await _authService.GetRefreshTokenModel(refreshToken);
+
+            if (refreshTokenModel == null)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest);
             }
 
-            var username = claimsPrincipal.FindFirstValue(ClaimTypes.Name);
-            //Call to db to check user valid
 
-            var newToken = GenerateJwtToken(username, isRefreshToken: false);
-            var newRefreshToken = GenerateJwtToken(username, isRefreshToken: true);
+            var newToken = GenerateJwtToken(refreshTokenModel.User, isRefreshToken: false);
+            var newRefreshToken = GenerateJwtToken(refreshTokenModel.User, isRefreshToken: true);
+
+            await _authService.AddRefreshTokenModel(new RefreshTokenModel
+            {
+                RefreshToken = newRefreshToken,
+                UserID = refreshTokenModel.UserID,
+            });
 
             return new LoginResponseModel
             {
@@ -81,29 +101,6 @@ namespace WebAppRestaurante.ApiService.Controllers
             };
         }
 
-        private ClaimsPrincipal GetClaimsPrincipalFromToken(string token, string? secret)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(secret);
-            try
-            {
-                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateAudience = true,
-                    ValidAudience = "doseHiue",
-                    ValidateIssuer = true,
-                    ValidIssuer = "doseHiue",
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-
-                }, out var validatedToken);
-                return principal;
-            }
-            catch {
-                return null;
-            }
-        }
     }
 }
 
