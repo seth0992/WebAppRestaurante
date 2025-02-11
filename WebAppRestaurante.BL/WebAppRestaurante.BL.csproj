@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WebAppRestaurante.Common\WebAppRestaurante.Common.csproj" />
     <ProjectReference Include="..\WebAppRestaurante.Database\WebAppRestaurante.Database.csproj" />
     <ProjectReference Include="..\WebAppRestaurante.Models\WebAppRestaurante.Models.csproj" />
   </ItemGroup>
