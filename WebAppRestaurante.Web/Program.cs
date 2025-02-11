@@ -19,6 +19,9 @@ builder.Services.AddOutputCache();
 builder.Services.AddAuthentication();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider , CustomAuthStateProvider>();
+builder.Services.AddControllers();
+
+builder.Services.AddLocalization(); //Agregar la localizacion 
 
 builder.Services.AddHttpClient<ApiClient>(client =>
     {
@@ -46,12 +49,24 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
+
+#region Configuración para soporte multiidioma
+var supportedCultures = new[] { "en-US", "es-ES" };
+var localizeoptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("en-US")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+app.UseRequestLocalization(localizeoptions);
+#endregion
+
 app.UseOutputCache();
 
 app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapControllers();   
 
 app.MapDefaultEndpoints();
 

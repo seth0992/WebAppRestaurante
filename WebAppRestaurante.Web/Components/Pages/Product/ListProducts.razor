@@ -1,9 +1,12 @@
 ﻿@page "/product"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
-@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.Extensions.Localization
+@using WebAppRestaurante.Common.Resources
+@inject IStringLocalizer<Resource> Localizers
+@* @attribute [Authorize(Roles = "Admin")] *@
 
-<h3>ListProducts</h3>
+<h3>@Localizers["Title"]</h3>
 
 @if (ProductoModels == null)
 {

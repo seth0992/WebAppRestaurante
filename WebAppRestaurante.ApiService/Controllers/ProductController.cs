@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using WebAppRestaurante.BL.Services;
+using WebAppRestaurante.Common.Resources;
 using WebAppRestaurante.Models.Entities.Products;
 using WebAppRestaurante.Models.Models;
 
@@ -10,12 +12,16 @@ namespace WebAppRestaurante.ApiService.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class ProductController(IProductService productService) : ControllerBase
+    public class ProductController(IProductService productService, IStringLocalizer<Resource> localizer) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<BaseResponseModel>> GetProducts()
         {
             var products = await productService.GetAllProductsAsync();
+            foreach (var product in products)
+            {
+                product.Description = product.Description != null ? localizer[product.Description] : null;
+            }
             return Ok(new BaseResponseModel { Success = true, Data = products });
         }
 

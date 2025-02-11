@@ -33,9 +33,52 @@ namespace WebAppRestaurante.BL.Repositories
 
         public async Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken)
         {
-            var newRefreshToken = await _appDbContext.RefreshTokens.Include(n => n.User).ThenInclude(n => n.UserRoles).ThenInclude(n => n.Role).FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
+            try
+            {  // Imprimir o registrar el token recibido
+                System.Diagnostics.Debug.WriteLine($"Token recibido: {refreshToken}");
 
-            return newRefreshToken;
+                // Obtener todos los tokens para verificar
+                var allTokens = await _appDbContext.RefreshTokens.ToListAsync();
+
+
+                // Primero verificamos si el token existe por sí solo
+                var tokenExists = await _appDbContext.RefreshTokens
+                    .AnyAsync(n => n.RefreshToken.Equals(refreshToken));
+
+                if (!tokenExists)
+                    throw new Exception("Token no encontrado en la base de datos");
+
+                // Verificamos la relación con User
+                var tokenWithUser = await _appDbContext.RefreshTokens
+                    .Include(n => n.User)
+                    .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
+
+                if (tokenWithUser?.User == null)
+                    throw new Exception("Token encontrado pero User es null");
+
+                // Verificamos la relación con UserRoles
+                var tokenWithUserRoles = await _appDbContext.RefreshTokens
+                    .Include(n => n.User)
+                    .ThenInclude(n => n.UserRoles)
+                    .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
+
+                if (tokenWithUserRoles?.User?.UserRoles == null)
+                    throw new Exception("UserRoles es null");
+
+                // Finalmente la consulta completa
+                var completeToken = await _appDbContext.RefreshTokens
+                    .Include(n => n.User)
+                    .ThenInclude(n => n.UserRoles)
+                    .ThenInclude(n => n.Role)
+                    .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
+
+                return completeToken;
+            }
+            catch (Exception ex)
+            {
+                // Aquí podrías agregar logging
+                throw;
+            }
         }
 
         public async Task<UserModel> GetUserByLogin(string username, string password)

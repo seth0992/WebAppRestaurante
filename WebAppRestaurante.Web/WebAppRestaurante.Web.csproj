@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WebAppRestaurante.Common\WebAppRestaurante.Common.csproj" />
     <ProjectReference Include="..\WebAppRestaurante.Models\WebAppRestaurante.Models.csproj" />
     <ProjectReference Include="..\WebAppRestaurante.ServiceDefaults\WebAppRestaurante.ServiceDefaults.csproj" />
   </ItemGroup>

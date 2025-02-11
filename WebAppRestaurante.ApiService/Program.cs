@@ -78,14 +78,27 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Agregar la localización para el cambio de idioma
+builder.Services.AddLocalization(); 
+
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-app.UseAuthentication(); // add middleware autentication
+// add middleware autentication
+app.UseAuthentication(); 
 app.UseAuthorization();
+
+#region Configuración para soporte multiidioma
+var supportedCultures = new[] { "en-US", "es-ES" };
+var localizeoptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("en-US")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+app.UseRequestLocalization(localizeoptions);
+#endregion
 
 if (app.Environment.IsDevelopment())
 {
@@ -93,6 +106,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.MapOpenApi();
 }
+
 
 
 app.MapControllers(); //Agregado para el uso de controladores

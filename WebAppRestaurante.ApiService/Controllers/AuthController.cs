@@ -43,7 +43,7 @@ namespace WebAppRestaurante.ApiService.Controllers
                 {
                     Token = token,
                     RefreshToken = resfreshToken,
-                    TokenExpired = DateTimeOffset.UtcNow.AddMinutes(9).ToUnixTimeSeconds()
+                    TokenExpired = DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeSeconds()
                 });
             }
             return Unauthorized();
@@ -64,7 +64,7 @@ namespace WebAppRestaurante.ApiService.Controllers
                 issuer: "doseHiue",
                 audience: "doseHiue",
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(isRefreshToken ? 24 * 60 : 9),
+                expires: DateTime.UtcNow.AddMinutes(isRefreshToken ? 24 * 60 : 30),
                 signingCredentials: creds
                 );
 
@@ -96,7 +96,7 @@ namespace WebAppRestaurante.ApiService.Controllers
             return new LoginResponseModel
             {
                 Token = newToken,
-                TokenExpired = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds(),
+                TokenExpired = DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeSeconds(),
                 RefreshToken = newRefreshToken
             };
         }

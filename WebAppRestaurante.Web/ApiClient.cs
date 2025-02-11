@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using WebAppRestaurante.Web.Authentication;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 namespace WebAppRestaurante.Web;
 
@@ -28,16 +30,22 @@ public class ApiClient(HttpClient httpClient,
                 if (sessionState.TokenExpired < DateTimeOffset.UtcNow.ToUnixTimeSeconds())
                 {
                     await ((CustomAuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+                    navigationManager.NavigateTo("/Login");
                 }
                 else if (sessionState.TokenExpired < DateTimeOffset.UtcNow.AddMinutes(10).ToUnixTimeSeconds())
                 {
-                    var res = await httpClient.GetFromJsonAsync<LoginResponseModel>($"/api/Auth/loginByRefreshToken?refreshToken= {sessionState.RefreshToken}");
+                    var res = await httpClient.GetFromJsonAsync<LoginResponseModel>($"/api/Auth/loginByRefreshToken?refreshToken={sessionState.RefreshToken}");
                     if (res != null)
                     {
                         await ((CustomAuthStateProvider)authStateProvider).MarkUserAsAuthenticated(res);
                         // Agregar el token a los headers
                         httpClient.DefaultRequestHeaders.Authorization =
                             new AuthenticationHeaderValue("Bearer", res.Token);
+                    }
+                    else
+                    {
+                        await ((CustomAuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
+                        navigationManager.NavigateTo("/Login");
                     }
                 }
                 else {
@@ -47,7 +55,6 @@ public class ApiClient(HttpClient httpClient,
                 }
                
             }
-
            
         }
         catch (Exception)
@@ -55,14 +62,18 @@ public class ApiClient(HttpClient httpClient,
             await ((CustomAuthStateProvider)authStateProvider).MarkUserAsLoggedOut();
             navigationManager.NavigateTo("/login");
         }
+
+        // Información de cultura para el idioma
+        var requestCulture = new RequestCulture(
+            CultureInfo.CurrentCulture,
+            CultureInfo.CurrentUICulture
+            );
+        var cultureCookeiValue = CookieRequestCultureProvider.MakeCookieValue(requestCulture);
+        httpClient.DefaultRequestHeaders.Add("Cookie",
+            $"{CookieRequestCultureProvider.DefaultCookieName}={cultureCookeiValue}");
     }
 
-    //private async Task<LoginResponseModel?> RefreshToken(string refreshToken)
-    //{
-    //    return await httpClient.GetFromJsonAsync<LoginResponseModel>(
-    //        $"/api/auth/refreshToken?token={refreshToken}");
-    //}
-
+  
     public async Task<T> GetFromJsonAsync<T>(string path)
     {
         await SetAuthorizationHeader();
@@ -95,8 +106,7 @@ public class ApiClient(HttpClient httpClient,
             return await response.Content.ReadFromJsonAsync<T1>();
         }
         catch (Exception ex)
-        {
-            //logger.LogError(ex, "Error making POST request to {Path}", path);
+        {          
             throw new HttpRequestException($"Error in request to {path}", ex);
         }
     }
