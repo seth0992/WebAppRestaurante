@@ -10,11 +10,17 @@ using WebAppRestaurante.Models.Entities.Users;
 namespace WebAppRestaurante.BL.Repositories
 {
     public interface IAuthRepository {
-        Task<UserModel> GetUserByLogin(string username, string password);
-
+        Task<UserModel> GetUserByUsername(string username);
+        Task<UserModel> GetUserById(int id);
+        Task<UserModel> CreateUser(UserModel user);
+        Task UpdateUser(UserModel user);
+        Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken);
         Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel);
         Task RemoveRefreshTokenByUserID(int userID);
-        Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken);
+        Task<bool> UpdateLastLogin(int userId);
+        Task<List<UserModel>> GetAllUsers();
+        Task<bool> DeactivateUser(int userId);
+        Task<bool> UpdateUserRoles(int userId, List<int> roleIds);
     }
     public class AuthRepository : IAuthRepository
     {
@@ -25,77 +31,152 @@ namespace WebAppRestaurante.BL.Repositories
             _appDbContext = appDbContext;
         }
 
-        public async Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel)
+        public async Task<UserModel> GetUserByUsername(string username)
         {
-            await _appDbContext.RefreshTokens.AddAsync(refreshTokenModel);
-            await _appDbContext.SaveChangesAsync(); 
+            // Obtenemos el usuario incluyendo sus roles y la información del rol
+            return await _appDbContext.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
+        }
+
+        public async Task<UserModel> GetUserById(int id)
+        {
+            // Obtenemos el usuario por ID incluyendo sus roles
+            return await _appDbContext.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.ID == id && u.IsActive);
+        }
+
+        public async Task<UserModel> CreateUser(UserModel user)
+        {
+            // Verificamos si ya existe un usuario con el mismo username o email
+            if (await _appDbContext.Users.AnyAsync(u => u.Username == user.Username))
+            {
+                throw new InvalidOperationException("Username already exists");
+            }
+
+            if (await _appDbContext.Users.AnyAsync(u => u.Email == user.Email))
+            {
+                throw new InvalidOperationException("Email already exists");
+            }
+
+            // Establecemos los valores por defecto
+            user.CreatedAt = DateTime.UtcNow;
+            user.IsActive = true;
+
+            // Agregamos el usuario a la base de datos
+            await _appDbContext.Users.AddAsync(user);
+            await _appDbContext.SaveChangesAsync();
+
+            return user;
+        }
+
+        public async Task UpdateUser(UserModel user)
+        {
+            // Verificamos si existe otro usuario con el mismo email (excluyendo el usuario actual)
+            if (await _appDbContext.Users.AnyAsync(u => u.Email == user.Email && u.ID != user.ID))
+            {
+                throw new InvalidOperationException("Email already exists");
+            }
+
+            // Actualizamos el usuario
+            _appDbContext.Entry(user).State = EntityState.Modified;
+
+            // No actualizamos la contraseña ni la fecha de creación
+            _appDbContext.Entry(user).Property(x => x.PasswordHash).IsModified = false;
+            _appDbContext.Entry(user).Property(x => x.CreatedAt).IsModified = false;
+
+            await _appDbContext.SaveChangesAsync();
         }
 
         public async Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken)
         {
-            try
-            {  // Imprimir o registrar el token recibido
-                System.Diagnostics.Debug.WriteLine($"Token recibido: {refreshToken}");
-
-                // Obtener todos los tokens para verificar
-                var allTokens = await _appDbContext.RefreshTokens.ToListAsync();
-
-
-                // Primero verificamos si el token existe por sí solo
-                var tokenExists = await _appDbContext.RefreshTokens
-                    .AnyAsync(n => n.RefreshToken.Equals(refreshToken));
-
-                if (!tokenExists)
-                    throw new Exception("Token no encontrado en la base de datos");
-
-                // Verificamos la relación con User
-                var tokenWithUser = await _appDbContext.RefreshTokens
-                    .Include(n => n.User)
-                    .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
-
-                if (tokenWithUser?.User == null)
-                    throw new Exception("Token encontrado pero User es null");
-
-                // Verificamos la relación con UserRoles
-                var tokenWithUserRoles = await _appDbContext.RefreshTokens
-                    .Include(n => n.User)
-                    .ThenInclude(n => n.UserRoles)
-                    .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
-
-                if (tokenWithUserRoles?.User?.UserRoles == null)
-                    throw new Exception("UserRoles es null");
-
-                // Finalmente la consulta completa
-                var completeToken = await _appDbContext.RefreshTokens
-                    .Include(n => n.User)
-                    .ThenInclude(n => n.UserRoles)
-                    .ThenInclude(n => n.Role)
-                    .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
-
-                return completeToken;
-            }
-            catch (Exception ex)
-            {
-                // Aquí podrías agregar logging
-                throw;
-            }
+            return await _appDbContext.RefreshTokens
+                .Include(n => n.User)
+                .ThenInclude(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(n => n.RefreshToken == refreshToken);
         }
 
-        public async Task<UserModel> GetUserByLogin(string username, string password)
+        public async Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel)
         {
-            return await _appDbContext.Users
-                    .Include(n => n.UserRoles)
-                    .ThenInclude(n => n.Role)
-                    .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+            await _appDbContext.RefreshTokens.AddAsync(refreshTokenModel);
+            await _appDbContext.SaveChangesAsync();
         }
 
         public async Task RemoveRefreshTokenByUserID(int userID)
         {
-            var refreshToken = _appDbContext.RefreshTokens.FirstOrDefault(n => n.UserID == userID);
-            if (refreshToken != null) { 
-                _appDbContext.RemoveRange(refreshToken);
+            var tokens = await _appDbContext.RefreshTokens
+                .Where(n => n.UserID == userID)
+                .ToListAsync();
+
+            if (tokens.Any())
+            {
+                _appDbContext.RefreshTokens.RemoveRange(tokens);
                 await _appDbContext.SaveChangesAsync();
             }
+        }
+
+        public async Task<bool> UpdateLastLogin(int userId)
+        {
+            var user = await _appDbContext.Users.FindAsync(userId);
+            if (user != null)
+            {
+                user.LastLogin = DateTime.UtcNow;
+                await _appDbContext.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<List<UserModel>> GetAllUsers()
+        {
+            return await _appDbContext.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Username)
+                .ToListAsync();
+        }
+
+        public async Task<bool> DeactivateUser(int userId)
+        {
+            var user = await _appDbContext.Users.FindAsync(userId);
+            if (user != null)
+            {
+                user.IsActive = false;
+                await _appDbContext.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<bool> UpdateUserRoles(int userId, List<int> roleIds)
+        {
+            var user = await _appDbContext.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.ID == userId);
+
+            if (user == null)
+                return false;
+
+            // Eliminamos los roles actuales
+            _appDbContext.UserRoles.RemoveRange(user.UserRoles);
+
+            // Agregamos los nuevos roles
+            foreach (var roleId in roleIds)
+            {
+                user.UserRoles.Add(new UserRolModel
+                {
+                    UserID = userId,
+                    RoleID = roleId
+                });
+            }
+
+            await _appDbContext.SaveChangesAsync();
+            return true;
         }
     }
 }
