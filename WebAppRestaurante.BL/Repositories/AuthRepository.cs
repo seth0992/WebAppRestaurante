@@ -15,6 +15,8 @@ namespace WebAppRestaurante.BL.Repositories
         Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel);
         Task RemoveRefreshTokenByUserID(int userID);
         Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken);
+        Task<UserModel> GetUserByUsername(string username);
+        Task<bool> UpdateLastLogin(int userId);
     }
     public class AuthRepository : IAuthRepository
     {
@@ -86,7 +88,7 @@ namespace WebAppRestaurante.BL.Repositories
             return await _appDbContext.Users
                     .Include(n => n.UserRoles)
                     .ThenInclude(n => n.Role)
-                    .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+                    .FirstOrDefaultAsync(u => u.Username == username && u.PasswordHash == password);
         }
 
         public async Task RemoveRefreshTokenByUserID(int userID)
@@ -96,6 +98,27 @@ namespace WebAppRestaurante.BL.Repositories
                 _appDbContext.RemoveRange(refreshToken);
                 await _appDbContext.SaveChangesAsync();
             }
+        }
+
+        public async Task<UserModel> GetUserByUsername(string username)
+        {
+            // Obtenemos el usuario incluyendo sus roles y la información del rol
+            return await _appDbContext.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
+        }
+
+        public async Task<bool> UpdateLastLogin(int userId)
+        {
+            var user = await _appDbContext.Users.FindAsync(userId);
+            if (user != null)
+            {
+                user.LastLogin = DateTime.UtcNow;
+                await _appDbContext.SaveChangesAsync();
+                return true;
+            }
+            return false;
         }
     }
 }

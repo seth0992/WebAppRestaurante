@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WebAppRestaurante.BL.Repositories;
+using WebAppRestaurante.Common.Security;
 using WebAppRestaurante.Models.Entities.Users;
 
 namespace WebAppRestaurante.BL.Services
@@ -17,22 +19,47 @@ namespace WebAppRestaurante.BL.Services
 
     }
 
-    public class AuthService(IAuthRepository authRepository) : IAuthService
+    public class AuthService : IAuthService
     {
+        private readonly ILogger<AuthService> _logger;
+        private readonly IAuthRepository _authRepository;
+
+        public AuthService(IAuthRepository authRepository, ILogger<AuthService> logger)
+        {
+            _authRepository = authRepository ?? throw new ArgumentNullException(nameof(authRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+
         public async Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel)
         {
-            await authRepository.RemoveRefreshTokenByUserID(refreshTokenModel.UserID);
-            await authRepository.AddRefreshTokenModel(refreshTokenModel);
+            await _authRepository.RemoveRefreshTokenByUserID(refreshTokenModel.UserID);
+            await _authRepository.AddRefreshTokenModel(refreshTokenModel);
         }
 
         public Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken)
         {
-            return authRepository.GetRefreshTokenModel(refreshToken);
+            return _authRepository.GetRefreshTokenModel(refreshToken);
         }
 
-        public Task<UserModel> GetUserByLogin(string username, string password)
+        public async Task<UserModel> GetUserByLogin(string username, string password)
         {
-            return authRepository.GetUserByLogin(username, password);
+            try
+            {
+                var user = await _authRepository.GetUserByUsername(username);
+                if (user != null && PasswordHasher.VerifyPassword(password, user.PasswordHash))
+                {
+                    await _authRepository.UpdateLastLogin(user.ID);
+                    return user;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en GetUserByLogin para el usuario {Username}", username);
+                throw;
+            }
+           
         }
     }
 }

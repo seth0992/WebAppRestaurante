@@ -10,8 +10,8 @@ namespace WebAppRestaurante.Models.Entities.Users
     {
         public int ID { get; set; }
         public int UserID { get; set; }
-        public string RefreshToken { get; set; }
+        public string RefreshToken { get; set; } = string.Empty;
 
-        public virtual UserModel User { get; set; }
+        public virtual UserModel? User { get; set; }
     }
 }

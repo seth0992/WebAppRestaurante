@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 using WebAppRestaurante.BL.Repositories;
 using WebAppRestaurante.BL.Services;
 using WebAppRestaurante.Database.Data;
@@ -54,6 +55,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add Products Services and Repository to the container.
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+//Add User services and Repository
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserServices>();
 
 //Add authentication services
 var secret = builder.Configuration.GetValue<string>("Jwt:Secret");
@@ -73,6 +77,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+   options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
+
 
 // Agregar los servicios de authenticacion
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
