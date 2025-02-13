@@ -11,7 +11,6 @@ namespace WebAppRestaurante.BL.Repositories
 {
     public interface IAuthRepository {
         Task<UserModel> GetUserByLogin(string username, string password);
-
         Task AddRefreshTokenModel(RefreshTokenModel refreshTokenModel);
         Task RemoveRefreshTokenByUserID(int userID);
         Task<RefreshTokenModel> GetRefreshTokenModel(string refreshToken);
