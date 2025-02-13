@@ -55,9 +55,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add Products Services and Repository to the container.
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+
 //Add User services and Repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserServices>();
+
+//Add Roles Services and repository
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 //Add authentication services
 var secret = builder.Configuration.GetValue<string>("Jwt:Secret");

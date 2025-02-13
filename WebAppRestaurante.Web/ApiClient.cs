@@ -107,6 +107,16 @@ public class ApiClient
         }
     }
 
+    public async Task<T?> PatchAsync<T>(string url)
+    {
+        var response = await _httpClient.PatchAsync(url, null);
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<T>(content);
+        }
+        return default;
+    }
     public async Task<T?> GetFromJsonAsync<T>(string requestUri)
     {
         try

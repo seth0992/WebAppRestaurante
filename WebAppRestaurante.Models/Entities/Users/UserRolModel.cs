@@ -12,7 +12,7 @@ namespace WebAppRestaurante.Models.Entities.Users
         public int UserID { get; set; }
         public int RoleID { get; set; }
 
-        public virtual RoleModel Role { get; set; } = new();
-        public virtual UserModel User { get; set; } = new();
+        public virtual RoleModel Role { get; set; } = null!;
+        public virtual UserModel User { get; set; } = null!;
     }
 }

@@ -8,6 +8,7 @@ namespace WebAppRestaurante.Web.Components.Pages.User
 {
     public partial class ListUser
     {
+
         private List<UserModel> users;
 
         [CascadingParameter]

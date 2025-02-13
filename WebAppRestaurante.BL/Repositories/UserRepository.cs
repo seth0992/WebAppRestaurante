@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,14 @@ namespace WebAppRestaurante.BL.Repositories
                  .ThenInclude(u => u.Role)
                  .ToListAsync();
         }
-
+        public async Task<UserModel> GetUserById(int id)
+        {
+            // Obtenemos el usuario por ID incluyendo sus roles
+            return await appDbContext.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.ID == id);
+        }
 
         public async Task<UserModel> CreateUser(UserModel user)
         {
@@ -108,7 +116,6 @@ namespace WebAppRestaurante.BL.Repositories
 
             await appDbContext.SaveChangesAsync();
             return true;
-        }
-
+        }      
     }
 }

@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Authorization
 @inject ApiClient ApiClient
 @inject IToastService ToastService
+@inject NavigationManager NavigationManager
 @attribute [Authorize(Roles = "SuperAdmin,Admin")]
 
 <div class="container">
@@ -10,7 +11,7 @@
             <h3>Gestión de Usuarios</h3>
         </div>
         <div class="col text-end">
-            <button class="btn btn-primary">
+            <button class="btn btn-primary" @onclick="@(() => NavigationManager.NavigateTo("/users/create"))">
                 <i class="bi bi-person-plus"></i> Nuevo Usuario
             </button>
         </div>
@@ -54,7 +55,7 @@
                             </td>
                             <td>@(user.LastLogin?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" >
+                                <button class="btn btn-sm btn-primary" @onclick="@(() => NavigationManager.NavigateTo($"/users/edit/{user.ID}"))">
                                     <i class="bi bi-pencil"></i> Modificar
                                 </button>
                                 @if (IsCurrentUserSuperAdmin)
