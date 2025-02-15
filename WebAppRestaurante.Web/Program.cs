@@ -1,5 +1,6 @@
 using Blazored.Toast;
 using Microsoft.AspNetCore.Components.Authorization;
+using Radzen;
 using WebAppRestaurante.Web;
 using WebAppRestaurante.Web.Authentication;
 using WebAppRestaurante.Web.Components;
@@ -8,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+
+builder.Services.AddRadzenComponents();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
