@@ -36,6 +36,8 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 // Add Blazored Toast
 builder.Services.AddBlazoredToast();
 
+builder.Services.AddScoped<NotificationService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

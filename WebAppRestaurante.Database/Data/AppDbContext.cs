@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WebAppRestaurante.Models.Entities.Products;
+using WebAppRestaurante.Models.Entities.Restaurant;
 using WebAppRestaurante.Models.Entities.Users;
 
 namespace WebAppRestaurante.Database.Data
@@ -53,6 +54,11 @@ namespace WebAppRestaurante.Database.Data
         public DbSet<RoleModel> Roles { get; set; }
         public DbSet<RefreshTokenModel> RefreshTokens { get; set; }
         public DbSet<UserRolModel> UserRoles { get; set; }
+        public DbSet<CategoryModel> Categories { get; set; }
+        public DbSet<ComboDetailModel> ComboDetails { get; set; }
+        public DbSet<IngredientModel> Ingredients { get; set; }
+        public DbSet<FastFoodItemModel> FastFoodItems { get; set; }
+        public DbSet<ItemIngredientModel> ItemIngredients { get; set; }
 
     }
 }
