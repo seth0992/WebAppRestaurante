@@ -11,7 +11,7 @@ namespace WebAppRestaurante.Models.Entities.Products
         public int ID { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public int Quantity { get; set; }
-        public double Price { get; set; }
+        public decimal Price { get; set; }
         public string Description { get; set; } = string.Empty;
         public DateTime CreateAt { get; set; } = DateTime.Now;
     }
